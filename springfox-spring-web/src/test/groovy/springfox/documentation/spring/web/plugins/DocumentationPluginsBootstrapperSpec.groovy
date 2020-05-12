@@ -43,7 +43,7 @@ class DocumentationPluginsBootstrapperSpec extends Specification {
   DocumentationPluginsBootstrapper bootstrapper =
           new DocumentationPluginsBootstrapper(pluginManager,
               [handlerProvider],
-              new DocumentationCache(),
+              new DocumentationCache(documentationPluginsBootstrapper),
               apiGroup,
               new TypeResolver(),
               new Defaults(),

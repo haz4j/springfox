@@ -36,7 +36,7 @@ class Swagger2ControllerSpec extends DocumentationContextSpec
 
   Swagger2Controller controller = new Swagger2Controller(
       mockEnvironment(),
-      new DocumentationCache(),
+      new DocumentationCache(documentationPluginsBootstrapper),
       swagger2Mapper(),
       new JsonSerializer([new Swagger2JacksonModule()]))
 

@@ -54,7 +54,7 @@ class Swagger1ControllerSpec extends DocumentationContextSpec
     implements MapperSupport, JsonSupport {
 
   Swagger1Controller sut =  new Swagger1Controller(
-          new DocumentationCache(),
+          new DocumentationCache(documentationPluginsBootstrapper),
           serviceMapper(),
           new JsonSerializer([new SwaggerJacksonModule()]))
 

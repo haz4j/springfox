@@ -40,6 +40,7 @@ import springfox.documentation.spi.service.ResourceGroupingStrategy;
 import springfox.documentation.spi.service.contexts.Defaults;
 import springfox.documentation.spring.web.json.JacksonModuleRegistrar;
 import springfox.documentation.spring.web.json.JsonSerializer;
+import springfox.documentation.spring.web.plugins.DocumentationPluginsBootstrapper;
 import springfox.documentation.spring.web.readers.operation.HandlerMethodResolver;
 
 import java.util.List;
@@ -72,8 +73,8 @@ public class SpringfoxWebMvcConfiguration {
   }
 
   @Bean
-  public DocumentationCache resourceGroupCache() {
-    return new DocumentationCache();
+  public DocumentationCache resourceGroupCache(DocumentationPluginsBootstrapper documentationPluginsBootstrapper) {
+    return new DocumentationCache(documentationPluginsBootstrapper);
   }
 
   @Bean

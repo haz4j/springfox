@@ -20,6 +20,7 @@
 package springfox.documentation.spring.web;
 
 import springfox.documentation.service.Documentation;
+import springfox.documentation.spring.web.plugins.DocumentationPluginsBootstrapper;
 
 import java.util.Collections;
 import java.util.Map;
@@ -27,21 +28,27 @@ import java.util.Map;
 import static com.google.common.collect.Maps.*;
 
 public class DocumentationCache {
-  private Map<String, Documentation> documentationLookup = newLinkedHashMap();
 
-  public void addDocumentation(Documentation documentation) {
-    documentationLookup.put(documentation.getGroupName(), documentation);
+  private final DocumentationPluginsBootstrapper documentationPluginsBootstrapper;
+
+  public DocumentationCache(DocumentationPluginsBootstrapper documentationPluginsBootstrapper) {
+    this.documentationPluginsBootstrapper = documentationPluginsBootstrapper;
   }
 
   public Documentation documentationByGroup(String groupName) {
-    return documentationLookup.get(groupName);
+    if (documentationPluginsBootstrapper.documentationLookup.isEmpty()){
+      documentationPluginsBootstrapper.start();
+    }
+    Documentation documentation = documentationPluginsBootstrapper.documentationLookup.get(groupName);
+
+    return documentation;
   }
 
   public Map<String, Documentation> all() {
-    return Collections.unmodifiableMap(documentationLookup);
+    return Collections.unmodifiableMap(documentationPluginsBootstrapper.documentationLookup);
   }
 
   public void clear() {
-    documentationLookup.clear();
+    documentationPluginsBootstrapper.documentationLookup.clear();
   }
 }

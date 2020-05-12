@@ -25,12 +25,12 @@ import com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.SmartLifecycle;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import springfox.documentation.RequestHandler;
 import springfox.documentation.schema.AlternateTypeRule;
 import springfox.documentation.schema.AlternateTypeRuleConvention;
+import springfox.documentation.service.Documentation;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spi.service.DocumentationPlugin;
 import springfox.documentation.spi.service.RequestHandlerCombiner;
@@ -43,11 +43,13 @@ import springfox.documentation.spring.web.scanners.ApiDocumentationScanner;
 
 import javax.servlet.ServletContext;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.google.common.collect.FluentIterable.*;
-import static springfox.documentation.builders.BuilderDefaults.*;
-import static springfox.documentation.spi.service.contexts.Orderings.*;
+import static com.google.common.collect.FluentIterable.from;
+import static com.google.common.collect.Maps.newLinkedHashMap;
+import static springfox.documentation.builders.BuilderDefaults.nullToEmptyList;
+import static springfox.documentation.spi.service.contexts.Orderings.pluginOrdering;
 
 /**
  * After an application context refresh, builds and executes all DocumentationConfigurer instances found in the
@@ -56,15 +58,14 @@ import static springfox.documentation.spi.service.contexts.Orderings.*;
  * If no instances DocumentationConfigurer are found a default one is created and executed.
  */
 @Component
-public class DocumentationPluginsBootstrapper implements SmartLifecycle {
+public class DocumentationPluginsBootstrapper {
   private static final Logger log = LoggerFactory.getLogger(DocumentationPluginsBootstrapper.class);
-  private static final String SPRINGFOX_DOCUMENTATION_AUTO_STARTUP = "springfox.documentation.auto-startup";
   private final DocumentationPluginsManager documentationPluginsManager;
   private final List<RequestHandlerProvider> handlerProviders;
-  private final DocumentationCache scanned;
   private final ApiDocumentationScanner resourceListing;
   private final Environment environment;
   private final DefaultConfiguration defaultConfiguration;
+  public final Map<String, Documentation> documentationLookup = newLinkedHashMap();
 
   private AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -77,7 +78,6 @@ public class DocumentationPluginsBootstrapper implements SmartLifecycle {
   public DocumentationPluginsBootstrapper(
       DocumentationPluginsManager documentationPluginsManager,
       List<RequestHandlerProvider> handlerProviders,
-      DocumentationCache scanned,
       ApiDocumentationScanner resourceListing,
       TypeResolver typeResolver,
       Defaults defaults,
@@ -86,7 +86,6 @@ public class DocumentationPluginsBootstrapper implements SmartLifecycle {
 
     this.documentationPluginsManager = documentationPluginsManager;
     this.handlerProviders = handlerProviders;
-    this.scanned = scanned;
     this.resourceListing = resourceListing;
     this.environment = environment;
     this.defaultConfiguration = new DefaultConfiguration(defaults, typeResolver, servletContext);
@@ -98,10 +97,14 @@ public class DocumentationPluginsBootstrapper implements SmartLifecycle {
 
   private void scanDocumentation(DocumentationContext context) {
     try {
-      scanned.addDocumentation(resourceListing.scan(context));
+      addDocumentation(resourceListing.scan(context));
     } catch (Exception e) {
       log.error(String.format("Unable to scan documentation context %s", context.getGroupName()), e);
     }
+  }
+
+  public void addDocumentation(Documentation documentation) {
+    documentationLookup.put(documentation.getGroupName(), documentation);
   }
 
   private DocumentationContextBuilder defaultContextBuilder(DocumentationPlugin plugin) {
@@ -140,21 +143,6 @@ public class DocumentationPluginsBootstrapper implements SmartLifecycle {
     };
   }
 
-  @Override
-  public boolean isAutoStartup() {
-    String autoStartupConfig =
-        environment.getProperty(
-            SPRINGFOX_DOCUMENTATION_AUTO_STARTUP,
-            "true");
-    return Boolean.valueOf(autoStartupConfig);
-  }
-
-  @Override
-  public void stop(Runnable callback) {
-    callback.run();
-  }
-
-  @Override
   public void start() {
     if (initialized.compareAndSet(false, true)) {
       log.info("Context refreshed");
@@ -171,21 +159,5 @@ public class DocumentationPluginsBootstrapper implements SmartLifecycle {
         }
       }
     }
-  }
-
-  @Override
-  public void stop() {
-    initialized.getAndSet(false);
-    scanned.clear();
-  }
-
-  @Override
-  public boolean isRunning() {
-    return initialized.get();
-  }
-
-  @Override
-  public int getPhase() {
-    return Integer.MAX_VALUE;
   }
 }

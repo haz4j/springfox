@@ -25,7 +25,7 @@ import springfox.documentation.builders.DocumentationBuilder
 class DocumentationCacheSpec extends Specification {
   def "Behaves like a map" () {
     given:
-      def sut = new DocumentationCache()
+      def sut = new DocumentationCache(documentationPluginsBootstrapper)
     and:
       sut.addDocumentation(new DocumentationBuilder().name("test").build())
 
@@ -40,7 +40,7 @@ class DocumentationCacheSpec extends Specification {
 
   def "Cache can be cleared " () {
     given:
-      def sut = new DocumentationCache()
+      def sut = new DocumentationCache(bootstrapper)
     and:
       sut.addDocumentation(new DocumentationBuilder().name("test").build())
     when:
